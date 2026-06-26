@@ -1,0 +1,18 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Generated RSA keys (sensitive - never commit private keys)
+keys/*
+!keys/.gitkeep
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
