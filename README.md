@@ -1,5 +1,7 @@
 # Cryptography Algorithms Implementation
 
+[![Tests](https://github.com/gowtham17097-cell/crypto-algorithms-project/actions/workflows/tests.yml/badge.svg)](https://github.com/gowtham17097-cell/crypto-algorithms-project/actions/workflows/tests.yml)
+
 An educational implementation of three core cryptography building blocks —
 **AES** (symmetric encryption), **RSA** (asymmetric encryption + digital
 signatures), and **SHA** (hashing) — built to understand how encryption,
@@ -7,17 +9,17 @@ decryption, and integrity verification actually work under the hood.
 
 ## Project Status
 
-| Phase | Topic                          | Status     |
-|-------|---------------------------------|------------|
-| 1     | Project setup                   | ✅ Done    |
-| 2     | SHA hashing                     | ✅ Done    |
-| 3     | AES symmetric encryption        | ⬜ Pending |
-| 4     | RSA asymmetric encryption       | ⬜ Pending |
-| 5     | Hybrid RSA+AES demo             | ⬜ Pending |
-| 6     | CLI integration                 | ⬜ Pending |
-| 7     | Unit tests                      | 🟡 Started (SHA tests done) |
-| 8     | OpenSSL cross-check              | ⬜ Pending |
-| 9     | Docs + publish                  | ⬜ Pending |
+| Phase | Topic                      | Status  |
+|-------|----------------------------|---------|
+| 1     | Project setup              | ✅ Done |
+| 2     | SHA hashing                | ✅ Done |
+| 3     | AES symmetric encryption   | ✅ Done |
+| 4     | RSA asymmetric encryption  | ✅ Done |
+| 5     | Hybrid RSA+AES demo        | ✅ Done |
+| 6     | CLI integration            | ✅ Done |
+| 7     | Unit tests                 | ✅ Done (30 passing) |
+| 8     | OpenSSL cross-check        | ✅ Done ([details](docs/openssl_crosscheck.md)) |
+| 9     | Docs + publish             | ✅ Done |
 
 ## Project Structure
 
@@ -28,38 +30,43 @@ crypto-algorithms-project/
 ├── requirements.txt
 ├── .gitignore
 │
+├── .github/
+│   └── workflows/
+│       └── tests.yml        # CI: runs the full test suite on every push
+│
 ├── src/
 │   ├── __init__.py
-│   ├── sha_hash.py        # SHA-256/384/512 hashing utilities (Phase 2 ✅)
-│   ├── aes_cipher.py       # AES-GCM encryption (Phase 3)
-│   ├── rsa_cipher.py       # RSA keygen, encryption, signatures (Phase 4)
-│   └── utils.py            # shared helpers
+│   ├── sha_hash.py          # SHA-256/384/512 hashing utilities
+│   ├── aes_cipher.py        # AES-256-GCM authenticated encryption
+│   ├── rsa_cipher.py        # RSA-2048 keygen, OAEP encryption, PSS signatures
+│   └── utils.py             # shared helpers (base64 encoding, etc.)
 │
 ├── cli/
-│   └── main.py              # menu-driven demo app (Phase 6)
+│   └── main.py               # menu-driven demo app tying everything together
 │
 ├── examples/
-│   ├── sha_demo.py         # ✅ runnable demo
+│   ├── sha_demo.py
 │   ├── aes_demo.py
 │   ├── rsa_demo.py
-│   └── hybrid_demo.py
+│   └── hybrid_demo.py        # RSA + AES combined, the pattern TLS actually uses
 │
 ├── tests/
-│   ├── test_sha.py         # ✅ 9 passing tests
-│   ├── test_aes.py
-│   └── test_rsa.py
+│   ├── test_sha.py           # 9 tests
+│   ├── test_aes.py           # 10 tests
+│   └── test_rsa.py           # 11 tests
 │
 ├── docs/
-│   └── algorithm_notes.md  # write-up explaining how each algorithm works
+│   ├── algorithm_notes.md         # how each algorithm works, in plain language
+│   └── openssl_crosscheck.md      # verification against the openssl CLI
 │
-└── keys/                    # generated RSA keys at runtime (gitignored)
+└── keys/                      # generated RSA keys at runtime (gitignored)
 ```
 
 ## Setup
 
 ```bash
 # 1. Clone the repo
-git clone <your-repo-url>
+git clone https://github.com/gowtham17097-cell/crypto-algorithms-project.git
 cd crypto-algorithms-project
 
 # 2. Create a virtual environment (recommended)
@@ -78,35 +85,56 @@ pip install -r requirements.txt
 
 ## Usage
 
-**Run the SHA demo:**
+**Run the interactive CLI** (the easiest way to try everything):
 ```bash
-python examples/sha_demo.py
+python cli/main.py
 ```
 
-**Run the test suite:**
+**Run individual demos:**
 ```bash
-python -m unittest discover tests
+python examples/sha_demo.py
+python examples/aes_demo.py
+python examples/rsa_demo.py
+python examples/hybrid_demo.py
 ```
+
+**Run the full test suite:**
+```bash
+python -m unittest discover tests -v
+```
+
+Tests also run automatically on every push via GitHub Actions — see the
+badge at the top of this README, or the **Actions** tab on GitHub.
 
 ## Algorithms Implemented
 
-### SHA (Secure Hash Algorithm) — ✅ Implemented
+### SHA (Secure Hash Algorithm)
 A one-way function that turns any input into a fixed-size fingerprint.
 Used for integrity verification — you can't reverse a hash back into the
 original data, but you can confirm data hasn't changed by comparing hashes.
 Implemented in `src/sha_hash.py` using Python's built-in `hashlib`
-(SHA-256, SHA-384, SHA-512).
+(SHA-256, SHA-384, SHA-512). Cross-checked against `openssl dgst`.
 
-### AES (Advanced Encryption Standard) — coming in Phase 3
-A symmetric cipher — the same key encrypts and decrypts. Fast, used for
-bulk data encryption (e.g. encrypting files, disk encryption, TLS session
-data). Will use AES-GCM mode for authenticated encryption.
+### AES (Advanced Encryption Standard)
+A symmetric cipher — the same 256-bit key encrypts and decrypts. Fast,
+used for bulk data encryption (disk encryption, TLS session data).
+Implemented in `src/aes_cipher.py` using AES-256-GCM, which adds an
+authentication tag so any tampering with the ciphertext is detected
+rather than silently producing corrupted output.
 
-### RSA (Rivest–Shamir–Adleman) — coming in Phase 4
-An asymmetric cipher — a public key encrypts, only the matching private key
-can decrypt. Slower than AES, so it's typically used to encrypt small
-things (like an AES key) or to create digital signatures, rather than bulk
-data.
+### RSA (Rivest–Shamir–Adleman)
+An asymmetric cipher — a public key encrypts (or verifies signatures),
+only the matching private key can decrypt (or create signatures).
+Implemented in `src/rsa_cipher.py` with 2048-bit keys, OAEP padding for
+encryption, and PSS padding for signatures — both cross-checked against
+the `openssl` CLI (see `docs/openssl_crosscheck.md`, which also covers a
+real SHA-1-vs-SHA-256 inconsistency the cross-check caught and fixed).
+
+### Hybrid RSA + AES
+RSA is slow and size-limited; AES needs a securely shared key. The
+standard real-world fix — used by TLS/HTTPS itself — is to generate a
+random AES key per message, encrypt the actual data with AES, and encrypt
+*only that small AES key* with RSA. Implemented in `examples/hybrid_demo.py`.
 
 ## License
 
